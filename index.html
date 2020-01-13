@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.4"></script>
+    <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+    <div class="container">
+        <canvas height="300" id="canvas" style="border: 2px solid" width="300"></canvas>
+        <div class="control" style="border: 2px solid">
+            <div id="upload">
+                <h3>Kép feltöltés:</h3>
+                <input type="file" name="image" id="F">
+            </div>
+            <h3>Hány pontot generáljak?</h3>
+            <input id="N" name="numOfPoints" type="number">
+
+            <h3>Próbálkozások száma:</h3>
+            <input id="D" name="numOfDraws" type="number">
+
+            <div id="btnCon">
+                <button id="calc">Számol</button>
+                <button id="reset">Reset</button>
+            </div>
+        </div>
+        <div id="results"></div>
+    </div>
+    <div id="chartCon">
+        <canvas height="400" id="chart" style="border: 2px solid" width="1200"></canvas>
+    </div>
+
+    <script src="MonteCarlo.js" type="module"></script>
+</body>
+
+</html>
+</body>

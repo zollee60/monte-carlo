@@ -1,0 +1,51 @@
+.container{
+    display: inline-flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-evenly;
+    
+}
+
+.control{
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-content: center;
+    align-items: center;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.inline{
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    margin: 20px;
+    
+}
+
+hr{
+    width: 100px;
+}
+
+#chartCon{
+    max-width: 1200px;
+    max-height: 400px;
+}
+
+#btnCon{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+#results {
+    width: 300px;
+    height: 300px;
+    overflow: auto;
+    margin-top: 10px;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+#results th div { position: absolute; margin-top: -20px; }
+#results tr:nth-child(even) { background: #EEE; }
+
