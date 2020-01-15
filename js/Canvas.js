@@ -7,7 +7,7 @@ export default class Canvas {
         this.numOfIn = [];
         this.pi = [];
         this.charts = [];
-        this.closestValues = [];
+        this.closestValues = 0;
     }
 
     drawCircleQuadrant() {
@@ -55,9 +55,9 @@ export default class Canvas {
         return `rgb(${red}, ${green}, ${blue})`;
     }
 
-    getClosestApprox() {
-        return this.pi.reduce((prev, curr) => {
-            return (Math.abs(curr - Math.PI) < Math.abs(prev - Math.PI) ? curr : prev)
+    getClosestApprox(arr) {
+        return arr.reduce((prev, curr) => {
+            return (Math.abs(curr.y - Math.PI) < Math.abs(prev.y - Math.PI) ? curr : prev)
         });
     }
 
@@ -78,60 +78,21 @@ export default class Canvas {
                 tmpPI.push(this.calcPiApprox(j));
                 this.ctx.fillRect(rx - 1, ry - 1, 2, 2);
             }
-            let sum = parseFloat(tmpPI.reduce((prev,curr) => curr += prev));
-
-            this.pi.push(sum / tmpPI.length);
-            console.log(this.pi[i]);
+            this.pi.push({x: i, y: this.getClosestApprox(tmpPI)});
         }
 
-        this.fire(this.pi, this.genRandomNonRedColor(), 'Átlagolt közelítés');
-        let closest = this.getClosestApprox();
-        this.closestValues.push({ try: 1, value: closest });
+        this.fire(this.pi, 'rgb(0,0,255)', 'Átlagolt közelítés');
+        this.closestValues = this.getClosestApprox(this.pi).y;
 
-    }
-
-    genRandomPoints(N, colorString) {
-        this.ctx.fillStyle = colorString;
-        this.pi = [];
-        this.numOfAll = 0;
-        this.numOfIn = 0;
-        for (let i = 0; i < N; i++) {
-
-            let rx = Math.floor(Math.random() * Math.floor(this.canvas.width));
-            let ry = Math.floor(Math.random() * Math.floor(this.canvas.height));
-
-            this.numOfAll++;
-
-            this.checkIfIsInside(rx, ry);
-            this.pi[i] = this.calcPiApprox();
-            this.ctx.fillRect(rx - 1, ry - 1, 2, 2);
-        }
-    }
-
-    calculate(D, N) {
-        for (let i = 0; i < D; i++) {
-            let colorString = this.genRandomNonRedColor();
-            this.genRandomPoints(N, colorString);
-            this.fire(
-                this.pi,
-                colorString,
-                `${
-                i + 1
-                }. próba`
-            );
-            let closest = this.getClosestApprox();
-            this.closestValues.push({ try: i, value: closest });
-        }
     }
 
     resetCanvas() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.drawCircleQuadrant();
         this.pi = [];
-        this.numOfAll = 0;
-        this.numOfIn = 0;
+        this.numOfAll = [];
+        this.numOfIn = [];
         this.charts = [];
-        this.closestValues = [];
+        this.closestValues = 0;
     }
 
     subscribe(chart) {

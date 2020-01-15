@@ -14,6 +14,12 @@ export default class CustomChart {
                 },
                 responsive: true,
                 maintainAspectRatio: true,
+                scales: {
+                    xAxes:[{
+                        type: 'linear',
+                        position: 'bottom'
+                    }]
+                },
                 plugins: {
                     zoom: {
                         pan: {
@@ -33,12 +39,9 @@ export default class CustomChart {
 
     init(N) {
         this.chartCanv.style.display = 'block';
-        this.chart.data.labels = Array.from({length: N}, (v, i) => i+1);
-        this.chart.update();
-        console.log(this.chart.data.labels)
         let pi = [];
         for (let i = 0; i < N; i++) {
-            pi[i] = Math.PI;
+            pi[i] = {x: i, y: Math.PI};
         }
         this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
     }

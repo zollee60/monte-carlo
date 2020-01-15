@@ -1,4 +1,4 @@
-export const loadResults = (ra,id) => {
+export const loadPIResults = (closest,id) => {
     let resultDiv = document.getElementById(id);
     
     let table = document.createElement('table');
@@ -10,21 +10,33 @@ export const loadResults = (ra,id) => {
         </tr>
     `;
 
-    ra.forEach((r) => {
+   
         table.innerHTML += `
         <tr>
-            <td>${r.try+1}. próba</td>
-            <td>${r.value}</td>
+            <td>Legpontosabb átlagolt közelítés</td>
+            <td>${closest}</td>
         </tr>
         `;
-    });
+
+        table.innerHTML += `
+        <tr>
+            <td>PI értéke</td>
+            <td>${Math.PI}</td>
+        </tr>
+        `;
 
     resultDiv.appendChild(table);
     resultDiv.style.display = 'block';
 };
+
+export const loadAreaResults = (closest, id) => {
+    
+}
 
 export const resetResults = (id) => {
     let resultDiv = document.getElementById(id);
     resultDiv.innerHTML = '';
     resultDiv.style.display = 'none';
 }
+
+

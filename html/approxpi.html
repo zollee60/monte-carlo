@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="hu">
     <head>
         <meta charset="UTF-8">
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
@@ -9,17 +8,16 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.4"></script>
-        <link href="style.css" rel="stylesheet" type="text/css">
+        <link href="../style.css" rel="stylesheet" type="text/css">
     </head>
 
     <body>
         <span>
-            <button id="pi">PI</button>
-            <button id="area">Terület</button>
+            <button class="switch" onclick="location.href='calcarea.html'" id="area">Terület</button>
         </span>
         <div class="container">
             <canvas height="300" id="canvas" style="border: 2px solid" width="300"></canvas>
-            <div id="control" style="border: 2px solid">
+            <div class="control" style="border: 2px solid">
                 <h3>Hány pontot generáljak?</h3>
                 <input id="N" name="numOfPoints" type="number">
 
@@ -37,7 +35,7 @@
             <canvas height="400" id="chart" style="border: 2px solid" width="1200"></canvas>
         </div>
 
-        <script src="js/MonteCarlo.js" type="module"></script>
+        <script src="../js/MonteCarloPI.js" type="module"></script>
     </body>
 
 </html></body>

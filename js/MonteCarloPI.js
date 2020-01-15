@@ -1,6 +1,6 @@
 import Canvas from './Canvas.js';
 import CustomChart from './CustomChart.js';
-import {loadResults, resetResults} from './ResultLoader.js'
+import {loadPIResults, resetResults} from './ResultLoader.js'
 
 let r = 100;
 let canvas = new Canvas('canvas');
@@ -15,11 +15,12 @@ document.getElementById('calc').addEventListener("click", () => {
     cc.init(N);
     canvas.subscribe(cc);
     canvas.genNewRandom(D,N);
-    loadResults(canvas.closestValues,'results');
+    loadPIResults(canvas.closestValues,'results');
 });
 
 document.getElementById('reset').addEventListener("click", () => {
     canvas.resetCanvas();
+    canvas.drawCircleQuadrant();
     cc.resetChart();
     resetResults('results');
 });
