@@ -12,3 +12,14 @@ document.getElementById('upload').addEventListener("click", () => {
 document.getElementById('move').addEventListener("click", () => {
     editor.setActiveTool('move');
 })
+
+document.getElementById('select').addEventListener("click", () => {
+    editor.setActiveTool('select');
+})
+
+document.getElementById('bsSlider').addEventListener("input", (e) => {
+    let value = parseFloat(e.target.value)
+    let span = document.getElementById('bssValue');
+    editor.burshSize = value;
+    span.style.left = value + "%";
+});

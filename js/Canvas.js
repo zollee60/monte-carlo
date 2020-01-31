@@ -5,6 +5,7 @@ export default class Canvas {
         this.ctx = this.canvas.getContext("2d");
         this.numOfAll = [];
         this.numOfIn = [];
+        this.size = 0;
         this.pi = [];
         this.charts = [];
         this.closestValues = 0;
@@ -44,7 +45,7 @@ export default class Canvas {
     }
 
     calcPiApprox(i) {
-        return 4 * (this.numOfIn[i] * (this.canvas.width * this.canvas.height) / this.numOfAll[i]) / Math.pow(this.canvas.width, 2);
+        return 4 * (this.numOfIn[i] * Math.pow(this.size, 2) / this.numOfAll[i]) / Math.pow(this.size, 2);
     }
 
     genRandomNonRedColor() {
@@ -61,7 +62,8 @@ export default class Canvas {
         });
     }
 
-    genNewRandom(D, N) {
+    genNewRandom(D, N, S) {
+        this.size = S;
         this.pi = [];
         this.numOfAll = Array.from({length: D},(v) => 0);
         this.numOfIn = Array.from({length: D},(v) => 0);
@@ -78,10 +80,11 @@ export default class Canvas {
                 tmpPI.push(this.calcPiApprox(j));
                 this.ctx.fillRect(rx - 1, ry - 1, 2, 2);
             }
-            this.pi.push({x: i, y: this.getClosestApprox(tmpPI)});
+            let sum = tmpPI.reduce((x,y) => x+y,0);
+            this.pi.push({x: i, y: sum / tmpPI.length});
         }
 
-        this.fire(this.pi, 'rgb(0,0,255)', 'Átlagolt közelítés');
+        this.fire(this.pi, this.genRandomNonRedColor(), `S = ${S}, P = ${N}, N = ${D}`);
         this.closestValues = this.getClosestApprox(this.pi).y;
 
     }

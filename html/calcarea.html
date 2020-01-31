@@ -18,7 +18,13 @@
         <div class="container">
             <div class="control" style="border: 2px solid">
                 <h3>Eszközök</h3>
-                <button class="switch" id="move"><span>Mozgatás</span><img src="../img/arrow3.png" height="30" width="30"></button>                
+                <button class="switch" id="move"><span>Mozgatás</span><img src="../img/arrow3.png" height="30" width="30"></button> 
+                <button class="switch" id="select"><span>Kijelölés</span></button>
+                <div>
+                    <span id="bssValue"></span>
+                    <input type="range" min="1" max="50" value="5" id="bsSlider">
+                </div>
+                
             </div>
             <canvas height="600" id="canvas" style="border: 2px solid" width="400"></canvas>
             <div class="control" style="border: 2px solid">

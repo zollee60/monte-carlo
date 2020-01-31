@@ -35,15 +35,22 @@ export default class CustomChart {
             }
         });
         this.chartCanv.style.display = 'none';
+        let pi = [];
+        this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
     }
 
     init(N) {
-        this.chartCanv.style.display = 'block';
         let pi = [];
         for (let i = 0; i < N; i++) {
             pi[i] = {x: i, y: Math.PI};
         }
-        this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
+        //this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
+        this.chart.data.datasets[0].data = pi;
+        this.chart.update();
+    }
+
+    show(){
+        this.chartCanv.style.display = 'block';
     }
 
     addNewDataSet(dataArray, colorString, label) {
@@ -78,6 +85,8 @@ export default class CustomChart {
 
     resetChart(){
         this.chart.data.datasets = [];
+        let pi = [];
+        this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
         this.chartCanv.style.display = 'none';
         this.chart.resetZoom();
     }

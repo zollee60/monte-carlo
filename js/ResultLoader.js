@@ -6,14 +6,14 @@ export const loadPIResults = (closest,id) => {
     table.innerHTML += `
         <tr>
             <th>Próbálkozás</th>
-            <th>Legpontosabb közelítés</th>
+            <th>Érték</th>
         </tr>
     `;
 
    
         table.innerHTML += `
         <tr>
-            <td>Legpontosabb átlagolt közelítés</td>
+            <td>Legpontosabb közelítés</td>
             <td>${closest}</td>
         </tr>
         `;
