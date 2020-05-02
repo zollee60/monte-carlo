@@ -40,23 +40,11 @@ export default class Editor {
         this.canvas.canvas.addEventListener('mousemove', this.draw.bind(this));
         this.canvas.canvas.addEventListener('mouseup', this.dragEnd.bind(this));
         this.canvas.canvas.addEventListener('mouseup', this.drawEnd.bind(this));
+        this.canvas.canvas.addEventListener('wheel', this.resize.bind(this));
+    }
 
-        this.canvas.canvas.addEventListener('wheel', (e) => {
-            if (e.deltaY < 0) 
-                this.scale += this.scaleStep;
-             else if (e.deltaY > 0) 
-                this.scale -= this.scaleStep;
-            
-            if(this.drawInfo.isDrawn){
-                this.imgInfo.width = this.imgEdited.width * this.scale;
-                this.imgInfo.height = this.imgEdited.height * (this.scale);
-            } else {
-                this.imgInfo.width = img.width * this.scale;
-                this.imgInfo.height = img.height * (this.scale);
-            }
-            
-            this.redraw();
-        });
+    triggerEvent(){
+        
     }
 
     loadImage() {
@@ -67,18 +55,23 @@ export default class Editor {
             img.onload = () => {
                 this.scale = this.canvas.canvas.width / img.width;
                 let w = img.width * this.scale;
-                let h = img.height * (this.scale);
+                let h = img.height * this.scale;
                 console.log((this.canvas.canvas.height / 2) + (img.height / 2));
                 let sy = (this.canvas.canvas.height / 2) - (h / 2);
                 this.canvas.ctx.drawImage(img, 0, sy, w, h);
                 this.img = img;
-                
+                console.log(this.img);
                 this.imgInfo.width = w;
                 this.imgInfo.height = h;
+                console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
+
+                this.dragInfo.canvasY = sy;
             }
             img.src = e.target.result;
         }
         fr.readAsDataURL(document.getElementById('img').files[0]);
+        this.drawInfo.isDrawn = false;
+        this.checkPointsOfImgs();
     }
 
     setActiveTool(tool) {
@@ -87,13 +80,23 @@ export default class Editor {
 
     redraw() {
         this.canvas.ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
-        this.canvas.ctx.scale(this.scale, this.scale);
         if(this.drawInfo.isDrawn){
-            this.canvas.ctx.putImageData(this.imgEdited, this.dragInfo.diffX, this.dragInfo.diffY);
+            console.log(this.imgEdited)
+            this.canvas.ctx.drawImage(this.imgEdited, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
         } else{
-            this.canvas.ctx.drawImage(this.img, this.dragInfo.diffX, this.dragInfo.diffY);
+            this.canvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
         }
-        this.canvas.ctx.scale(1 / this.scale, 1 / this.scale);
+    }
+
+    resize(e){
+        if (e.deltaY < 0) this.scale += this.scaleStep;
+        else if (e.deltaY > 0) this.scale -= this.scaleStep;
+        
+        this.imgInfo.width = this.img.width * this.scale;
+        this.imgInfo.height = this.img.height * this.scale;
+        console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
+        
+        this.redraw();
     }
 
     dragStart(e) {
@@ -103,17 +106,20 @@ export default class Editor {
     }
 
     drag(e) {
+        let mousePos = this.calcMouseCoords(e);
         if (this.img !== null && this.activeTool === 'move' && this.dragInfo.isDragging) {
-            this.dragInfo.diffX = this.dragInfo.canvasX + (e.clientX - this.dragInfo.startX) / this.scale;
-            this.dragInfo.diffY = this.dragInfo.canvasY + (e.clientY - this.dragInfo.startY) / this.scale;
+            this.dragInfo.diffX = (e.clientX - this.dragInfo.startX) / this.scale;
+            this.dragInfo.diffY = (e.clientY - this.dragInfo.startY) / this.scale;
+            this.dragInfo.canvasX += this.dragInfo.diffX;
+            this.dragInfo.canvasY += this.dragInfo.diffY;
+            this.dragInfo.startX = e.clientX;
+            this.dragInfo.startY = e.clientY;
             this.redraw();
         }
     }
 
     dragEnd(e) {
         this.dragInfo.isDragging = false;
-        this.dragInfo.canvasX = this.dragInfo.diffX;
-        this.dragInfo.canvasY = this.dragInfo.diffY;
     }
 
     calcMouseCoords(e) {
@@ -131,8 +137,8 @@ export default class Editor {
         this.canvas.ctx.lineWidth = this.burshSize;
         this.drawInfo.isDrawing = true;
         let mousePos = this.calcMouseCoords(e);
-        this.drawInfo.lastX = mousePos.x;
-        this.drawInfo.lastY = mousePos.y;
+        /* this.drawInfo.lastX = mousePos.x;
+        this.drawInfo.lastY = mousePos.y; */
     }
     draw(e) {
         if (this.img !== null && this.activeTool === 'select' && this.drawInfo.isDrawing) {
@@ -152,7 +158,9 @@ export default class Editor {
         if (this.activeTool === 'select') {
             this.drawInfo.isDrawing = false;
             this.drawInfo.isDrawn = true;
-            this.imgEdited = this.canvas.ctx.getImageData(this.dragInfo.diffX,this.dragInfo.diffY,this.imgInfo.width,this.imgInfo.height);
+            console.log(this.canvas.ctx.getImageData(this.dragInfo.canvasX,this.dragInfo.canvasY,this.imgInfo.width,this.imgInfo.height))
+            let bitmapPromise = createImageBitmap(this.canvas.ctx.getImageData(this.dragInfo.canvasX,this.dragInfo.canvasY,this.imgInfo.width,this.imgInfo.height));
+            bitmapPromise.then((value) => this.imgEdited = value);
         }
 
     }
