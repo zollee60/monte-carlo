@@ -1,16 +1,18 @@
 export default class Editor {
 
-    constructor(canvas) {
+    constructor(imgCanvas, drawCanvas) {
         this.numOfDraws = parseFloat(document.getElementById('D').value);
         this.numOfPoints = parseFloat(document.getElementById('N').value);
-        this.canvas = canvas;
-        this.canvas.ctx.lineJoin = 'round';
+        this.drawCanvas = drawCanvas;
+        this.imgCanvas = imgCanvas;
+        this.drawCanvas.ctx.lineJoin = 'round';
         this.img = null;
-        this.imgEdited = null;
+        this.drawnImg = null;
         this.activeTool = null;
+        this.autoFill = false;
         this.scale = 1;
         this.scaleStep = 0.01;
-        this.bounds = this.canvas.canvas.getBoundingClientRect();
+        this.bounds = imgCanvas.canvas.getBoundingClientRect();
         this.dragInfo = {
             isDragging: false,
             startX: 0,
@@ -21,12 +23,16 @@ export default class Editor {
             canvasY: 0
         };
         this.drawInfo = {
+            shiftDown: false,
             isDrawn: false,
             isDrawing: false,
             currX: 0,
             currY: 0,
             lastX: 0,
-            lastY: 0
+            lastY: 0,
+            path: null,
+            maxX: 0,
+            maxY: 0,
         }
         this.imgInfo = {
             width: 0,
@@ -34,31 +40,65 @@ export default class Editor {
         }
         this.burshSize = 5;
         document.getElementById('bsSlider').value = this.burshSize;
-        this.canvas.canvas.addEventListener('mousedown', this.dragStart.bind(this));
-        this.canvas.canvas.addEventListener('mousedown', this.drawStart.bind(this));
-        this.canvas.canvas.addEventListener('mousemove', this.drag.bind(this));
-        this.canvas.canvas.addEventListener('mousemove', this.draw.bind(this));
-        this.canvas.canvas.addEventListener('mouseup', this.dragEnd.bind(this));
-        this.canvas.canvas.addEventListener('mouseup', this.drawEnd.bind(this));
-        this.canvas.canvas.addEventListener('wheel', this.resize.bind(this));
+        this.drawCanvas.canvas.addEventListener('mousedown', this.triggerEvent.bind(this));
+        this.drawCanvas.canvas.addEventListener('mousemove', this.triggerEvent.bind(this));
+        this.drawCanvas.canvas.addEventListener('mouseup', this.triggerEvent.bind(this));
+        this.drawCanvas.canvas.addEventListener('wheel', this.resize.bind(this));
+        document.addEventListener('keydown', this.handleShift.bind(this));
+        document.addEventListener('keyup', this.handleShift.bind(this));
     }
 
-    triggerEvent(){
-        
+    triggerEvent(event) {
+        if (event.type == "mousedown") {
+            if (this.activeTool == "move") {
+                this.dragStart(event);
+            } else if (this.activeTool == "select") {
+                this.drawStart(event);
+            } else if (this.activeTool == "square") {
+                this.drawSquareStart(event);
+            } else if (this.activeTool == "circle") {
+                this.drawCircleStart(event);
+            }
+        } else if (event.type == "mousemove") {
+            if (this.activeTool == "move") {
+                this.drag(event);
+            } else if (this.activeTool == "select") {
+                this.draw(event);
+            } else if (this.activeTool == "square") {
+                this.drawSquare(event);
+            } else if (this.activeTool == "circle") {
+                this.drawCircle(event);
+            }
+        } else if (event.type == "mouseup") {
+            if (this.activeTool == "move") {
+                this.dragEnd(event);
+            } else if (this.activeTool == "select") {
+                this.drawEnd(event);
+            } else if (this.activeTool == "square") {
+                this.drawSquareEnd(event);
+            } else if (this.activeTool == "circle") {
+                this.drawCircleEnd(event);
+            }
+        }
+    }
+
+    handleShift(e){
+        if(e.key === "Shift") this.drawInfo.shiftDown = !this.drawInfo.shiftDown;
     }
 
     loadImage() {
-        this.canvas.resetCanvas();
+        this.drawCanvas.resetCanvas();
+        this.imgCanvas.resetCanvas();
         let fr = new FileReader();
         fr.onload = (e) => {
             let img = new Image();
             img.onload = () => {
-                this.scale = this.canvas.canvas.width / img.width;
+                this.scale = this.imgCanvas.canvas.width / img.width;
                 let w = img.width * this.scale;
                 let h = img.height * this.scale;
-                console.log((this.canvas.canvas.height / 2) + (img.height / 2));
-                let sy = (this.canvas.canvas.height / 2) - (h / 2);
-                this.canvas.ctx.drawImage(img, 0, sy, w, h);
+                console.log((this.imgCanvas.canvas.height / 2) + (img.height / 2));
+                let sy = (this.imgCanvas.canvas.height / 2) - (h / 2);
+                this.imgCanvas.ctx.drawImage(img, 0, sy, w, h);
                 this.img = img;
                 console.log(this.img);
                 this.imgInfo.width = w;
@@ -71,7 +111,6 @@ export default class Editor {
         }
         fr.readAsDataURL(document.getElementById('img').files[0]);
         this.drawInfo.isDrawn = false;
-        this.checkPointsOfImgs();
     }
 
     setActiveTool(tool) {
@@ -79,23 +118,28 @@ export default class Editor {
     }
 
     redraw() {
-        this.canvas.ctx.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
-        if(this.drawInfo.isDrawn){
-            console.log(this.imgEdited)
-            this.canvas.ctx.drawImage(this.imgEdited, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
-        } else{
-            this.canvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
+        this.imgCanvas.ctx.clearRect(0, 0, this.imgCanvas.canvas.width, this.imgCanvas.canvas.height);
+        this.drawCanvas.ctx.clearRect(0, 0, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+        if (this.drawInfo.isDrawn) {
+            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+            this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
+        } else {
+            this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
         }
     }
 
-    resize(e){
-        if (e.deltaY < 0) this.scale += this.scaleStep;
-        else if (e.deltaY > 0) this.scale -= this.scaleStep;
+    resize(e) {
+        if (e.deltaY < 0) 
+            this.scale += this.scaleStep;
+         else if (e.deltaY > 0) 
+            this.scale -= this.scaleStep;
         
+
+
         this.imgInfo.width = this.img.width * this.scale;
         this.imgInfo.height = this.img.height * this.scale;
         console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
-        
+
         this.redraw();
     }
 
@@ -127,29 +171,37 @@ export default class Editor {
             x: 0,
             y: 0
         }
-        mousePos.x = ((e.pageX - this.bounds.left - scrollX) / this.bounds.width) * this.canvas.canvas.width;
-        mousePos.y = ((e.pageY - this.bounds.top - scrollY) / this.bounds.height) * this.canvas.canvas.height;
+        mousePos.x = ((e.pageX - this.bounds.left - scrollX) / this.bounds.width) * this.imgCanvas.canvas.width;
+        mousePos.y = ((e.pageY - this.bounds.top - scrollY) / this.bounds.height) * this.imgCanvas.canvas.height;
         return mousePos;
     }
 
     drawStart(e) {
-        this.canvas.ctx.strokeStyle = 'rgb(255,0,0)';
-        this.canvas.ctx.lineWidth = this.burshSize;
+        this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
+        this.drawCanvas.ctx.lineWidth = this.burshSize;
         this.drawInfo.isDrawing = true;
         let mousePos = this.calcMouseCoords(e);
-        /* this.drawInfo.lastX = mousePos.x;
-        this.drawInfo.lastY = mousePos.y; */
+        this.drawInfo.lastX = mousePos.x;
+        this.drawInfo.lastY = mousePos.y;
+        if (this.autoFill) {
+            this.drawInfo.path = new Path2D();
+            this.drawInfo.path.moveTo(this.drawInfo.lastX, this.drawInfo.lastY);
+        }
+
     }
     draw(e) {
         if (this.img !== null && this.activeTool === 'select' && this.drawInfo.isDrawing) {
             let mousePos = this.calcMouseCoords(e);
             this.drawInfo.currX = mousePos.x;
             this.drawInfo.currY = mousePos.y;
-            this.canvas.ctx.beginPath();
-            this.canvas.ctx.moveTo(this.drawInfo.lastX, this.drawInfo.lastY)
-            this.canvas.ctx.lineTo(this.drawInfo.currX, this.drawInfo.currY);
-            this.canvas.ctx.closePath();
-            this.canvas.ctx.stroke();
+            this.drawCanvas.ctx.beginPath();
+            this.drawCanvas.ctx.moveTo(this.drawInfo.lastX, this.drawInfo.lastY);
+            this.drawCanvas.ctx.lineTo(this.drawInfo.currX, this.drawInfo.currY);
+            if (this.autoFill) {
+                this.drawInfo.path.lineTo(this.drawInfo.currX, this.drawInfo.currY);
+            }
+            this.drawCanvas.ctx.closePath();
+            this.drawCanvas.ctx.stroke();
             this.drawInfo.lastX = this.drawInfo.currX;
             this.drawInfo.lastY = this.drawInfo.currY;
         }
@@ -158,11 +210,130 @@ export default class Editor {
         if (this.activeTool === 'select') {
             this.drawInfo.isDrawing = false;
             this.drawInfo.isDrawn = true;
-            console.log(this.canvas.ctx.getImageData(this.dragInfo.canvasX,this.dragInfo.canvasY,this.imgInfo.width,this.imgInfo.height))
-            let bitmapPromise = createImageBitmap(this.canvas.ctx.getImageData(this.dragInfo.canvasX,this.dragInfo.canvasY,this.imgInfo.width,this.imgInfo.height));
-            bitmapPromise.then((value) => this.imgEdited = value);
+            console.log(this.autoFill);
+            if (this.autoFill) {
+                this.drawInfo.path.closePath();
+                this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
+                this.drawCanvas.ctx.fill(this.drawInfo.path);
+            }
+            console.log(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height))
+            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+            bitmapPromise.then((value) => this.drawnImg = value);
         }
 
     }
 
-}
+    clearArea(shape,e,x,y) {
+        let w = Math.abs(x - this.drawInfo.lastX);
+        let h = Math.abs(y - this.drawInfo.lastY);
+        let plus = Math.ceil(this.burshSize / 2);
+        if (x < this.drawInfo.currX) {
+            w = this.drawInfo.maxX - this.drawInfo.lastX;
+            this.drawInfo.maxX = this.drawInfo.currX;
+        }
+        if (y < this.drawInfo.currY) {
+            h = this.drawInfo.maxY - this.drawInfo.lastY;
+            this.drawInfo.maxY = this.drawInfo.currY;
+        }
+        this.drawInfo.currX = x;
+        this.drawInfo.currY = y;
+        if(shape === "square"){
+            if (x < this.drawInfo.maxX || y < this.drawInfo.maxY) {
+                if (this.drawInfo.shiftDown){
+                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), w + (plus * 2));
+                }else{
+                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), h + (plus * 2));
+                }
+                
+            } else {
+                if (this.drawInfo.shiftDown){
+                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX, this.drawInfo.lastY, w, w);
+                }else{
+                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX, this.drawInfo.lastY, w, h);
+                }
+            }
+        }
+        else if(shape === "circle"){
+            this.drawCanvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), h + (plus * 2));
+        }
+    }
+
+    drawSquareStart(e) {
+        this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
+        this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
+        this.drawCanvas.ctx.lineWidth = this.burshSize;
+        let mousePos = this.calcMouseCoords(e);
+        this.drawInfo.lastX = mousePos.x;
+        this.drawInfo.lastY = mousePos.y;
+        this.drawInfo.isDrawing = true;
+    }
+
+    drawSquare(e) {
+        if (this.img !== null && this.activeTool === 'square' && this.drawInfo.isDrawing) {
+            let mousePos = this.calcMouseCoords(e);
+            this.clearArea("square",e,mousePos.x,mousePos.y);
+            this.drawCanvas.ctx.beginPath();
+            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+            let w = Math.abs(mousePos.x - this.drawInfo.lastX);
+            let h = Math.abs(mousePos.y - this.drawInfo.lastY);
+            if(this.drawInfo.shiftDown){
+                this.drawCanvas.ctx.rect(this.drawInfo.lastX, this.drawInfo.lastY, w, w);
+            }
+            else{
+                this.drawCanvas.ctx.rect(this.drawInfo.lastX, this.drawInfo.lastY, w, h);
+            }
+            if (this.autoFill) 
+                this.drawCanvas.ctx.fill();
+            else 
+                this.drawCanvas.ctx.stroke();
+        }
+    }
+
+        drawSquareEnd(e) {
+            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+            bitmapPromise.then((value) => this.drawnImg = value) 
+                this.drawInfo.isDrawing = false;
+            
+        }
+
+        drawCircleStart(e) {
+            this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
+            this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
+            this.drawCanvas.ctx.lineWidth = this.burshSize;
+            let mousePos = this.calcMouseCoords(e);
+            this.drawInfo.lastX = mousePos.x;
+            this.drawInfo.lastY = mousePos.y;
+            this.drawInfo.isDrawing = true;
+        }
+
+        drawCircle(e) {
+            if (this.img !== null && this.activeTool === 'circle' && this.drawInfo.isDrawing) {
+                let mousePos = this.calcMouseCoords(e);
+                this.clearArea("circle",e,mousePos.x,mousePos.y);
+                this.drawCanvas.ctx.beginPath();
+                this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+                let ox = this.drawInfo.lastX + Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2);
+                let oy = this.drawInfo.lastY + Math.floor((this.drawInfo.currY - this.drawInfo.lastY) / 2);
+                if(this.drawInfo.shiftDown){
+                    oy = this.drawInfo.lastY + Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2);
+                    this.drawCanvas.ctx.ellipse(ox, oy, Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), 0, 0, Math.PI * 2);
+                }
+                else{
+                    this.drawCanvas.ctx.ellipse(ox, oy, Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), Math.floor((this.drawInfo.currY - this.drawInfo.lastY) / 2), 0, 0, Math.PI * 2);
+                }
+                
+                if (this.autoFill) 
+                    this.drawCanvas.ctx.fill();
+                else 
+                    this.drawCanvas.ctx.stroke();
+            }
+        }
+
+        drawCircleEnd(e) {
+            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+            bitmapPromise.then((value) => this.drawnImg = value) 
+                    this.drawInfo.isDrawing = false;
+            }
+
+
+        }

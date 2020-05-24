@@ -1,51 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta content="width=device-width, initial-scale=1.0" name="viewport">
-        <meta content="ie=edge" http-equiv="X-UA-Compatible">
-        <title>Document</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.4"></script>
-        <link href="../style.css" rel="stylesheet" type="text/css">
-    </head>
 
-    <body>
-        <span>
-            <button class="switch" onclick="location.href='approxpi.html'" id="pi">PI közelítés</button>
-        </span>
-        <div class="container">
-            <div class="control" style="border: 2px solid">
-                <h3>Eszközök</h3>
-                <button class="switch" id="move"><span>Mozgatás</span><img src="../img/arrow3.png" height="30" width="30"></button> 
-                <button class="switch" id="select"><span>Kijelölés</span></button>
-                <div>
-                    <span id="bssValue"></span>
-                    <input type="range" min="1" max="50" value="5" id="bsSlider">
-                </div>
-                
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.4"></script>
+    <link href="../style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+    <!--<span>
+        <button class="switch" onclick="location.href='approxpi.html'" id="pi">PI közelítés</button>
+    </span>-->
+    
+    <div class="container">
+        <div class="control" style="border: 2px solid">
+            <h3>Eszközök</h3>
+            <div class="buttons">
+                <button class="switch" id="move"><img src="../img/arrow3.png" height="30" width="30"></button>
+                <button class="switch" id="select"><img src="../img/hand.png" height="30" width="30"></button>
+                <button class="switch" id="square"><img src="../img/square.png" height="30" width="30"></button>
+                <button class="switch" id="circle"><img src="../img/empty.png" height="30" width="30"></button>
             </div>
-            <canvas height="600" id="canvas" style="border: 2px solid" width="400"></canvas>
-            <div class="control" style="border: 2px solid">
-                <h3>Kép feltöltés:</h3>
-                <input type="file" id="img" accept="image/png, image/jpeg">
-                <button id="upload">Feltöltés</button>
-
-                <h3>Hány pontot generáljak?</h3>
-                <input id="N" name="numOfPoints" type="number">
-
-                <h3>Próbálkozások száma:</h3>
-                <input id="D" name="numOfDraws" type="number">
-
-                <div id="btnCon">
-                    <button id="calc">Számol</button>
-                    <button id="reset">Reset</button>
-                </div>
+            <div>
+                <input type="checkbox" id="autofill" name="autofill">
+                <label for="autofill">Autofill</label>
             </div>
-            <div id="results"></div>
+
+            <div>
+                <span id="bssValue"></span>
+                <input type="range" min="1" max="50" value="5" id="bsSlider">
+            </div>
+
         </div>
-        <script src="../js/MonteCarloArea.js" type="module"></script>
-    </body>
+        <div class="editor">
+            <canvas height="600" id="image-layer" width="400"></canvas>
+            <canvas height="600" id="draw-layer" width="400"></canvas>
+        </div>
+        
+        <div class="control" style="border: 2px solid">
+            <h3>Kép feltöltés:</h3>
+            <input type="file" id="img" accept="image/png, image/jpeg">
+            <button id="upload">Feltöltés</button>
 
-</html></body>
+            <h3>Hány pontot generáljak?</h3>
+            <input id="N" name="numOfPoints" type="number">
+
+            <h3>Próbálkozások száma:</h3>
+            <input id="D" name="numOfDraws" type="number">
+
+            <div id="btnCon">
+                <button id="calc">Számol</button>
+                <button id="reset">Reset</button>
+            </div>
+        </div>
+        <!--<div id="results"></div>-->
+    </div>
+    <script src="../js/MonteCarloArea.js" type="module"></script>
+</body>
+
+</html>
+</body>
