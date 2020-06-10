@@ -55,12 +55,27 @@
             <h3>Próbálkozások száma:</h3>
             <input id="D" name="numOfDraws" type="number">
 
+            <h3>Méretarány</h3>
+            <div class="inline">
+                <input type="number" id="DI">
+                <select name="unit" id="U">
+                    <option value="mm">mm</option>
+                    <option value="cm">cm</option>
+                    <option value="m">m</option>
+                    <option value="km">km</option>
+                </select>
+            </div>
+
             <div id="btnCon">
                 <button id="calc">Számol</button>
                 <button id="reset">Reset</button>
             </div>
+
         </div>
         <!--<div id="results"></div>-->
+    </div>
+    <div id="chartCon">
+        <canvas height="400" id="chart" style="border: 2px solid" width="1200"></canvas>
     </div>
     <script src="../js/MonteCarloArea.js" type="module"></script>
 </body>

@@ -1,6 +1,6 @@
 .container{
     width: 1000px;
-    display: inline-flex;
+    display: flex;
     flex-direction: row;
     justify-content: space-evenly;
     margin: auto;

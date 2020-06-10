@@ -131,10 +131,15 @@ export default class Editor {
         this.drawInfo.isDrawn = false;
     }
 
+    getLengthOfScale(){
+        return Math.sqrt(Math.pow(this.scaleInfo.endX - this.scaleInfo.startX) + Math.pow(this.scaleInfo.endY - this.scaleInfo.startY));
+    }
+
     setActiveTool(tool) {
         this.activeTool = tool;
     }
 
+    //FIXME - restructure drawImage() calls
     redraw() {
         this.imgCanvas.ctx.clearRect(0, 0, this.imgCanvas.canvas.width, this.imgCanvas.canvas.height);
         this.drawCanvas.ctx.clearRect(0, 0, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
@@ -146,6 +151,16 @@ export default class Editor {
         } else {
             this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
         }
+    }
+
+    setFixedSizedOSCanvasImage(sourceCanvas,w,h){
+        let oc = new OffscreenCanvas(this.img.width,this.img.height);
+        let octx = oc.getContext('2d');
+        let sourceImg = null;
+        let sourceBitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+        sourceBitmapPromise.then((value) => sourceImg = value);
+        octx.drawImage(sourceImg, 0, 0, w, h);
+        sourceCanvas.startingImgData = octx.getImageData(0,0,oc.width,oc.height);
     }
 
     resize(e) {
@@ -280,6 +295,8 @@ export default class Editor {
         this.drawInfo.isDrawing = true;
     }
 
+    //FIXME - fix image duplication
+
     drawSquare(e) {
         if (this.img !== null && this.activeTool === 'square' && this.drawInfo.isDrawing) {
             let mousePos = this.calcMouseCoords(e);
@@ -349,8 +366,8 @@ export default class Editor {
         this.scaleCanvas.ctx.clearRect(0,0,this.scaleCanvas.canvas.width,this.scaleCanvas.canvas.height);
         this.scaleCanvas.ctx.lineWidth = this.burshSize;
         let mousePos = this.calcMouseCoords(e);
-        this.drawInfo.lastX = mousePos.x;
-        this.drawInfo.lastY = mousePos.y;
+        this.scaleInfo.startX = mousePos.x;
+        this.scaleInfo.startY = mousePos.y;
         this.drawInfo.isDrawing = true;
         console.log("drawScaleStart() is called");
     }
@@ -363,6 +380,8 @@ export default class Editor {
             this.scaleCanvas.ctx.moveTo(this.drawInfo.lastX,this.drawInfo.lastY);
             this.scaleCanvas.ctx.lineTo(mousePos.x,mousePos.y);
             this.scaleCanvas.ctx.stroke();
+            this.scaleInfo.endX = mousePos.x;
+            this.scaleInfo.endY = mousePos.y;
         }
     }
 

@@ -1,11 +1,13 @@
 import Canvas from './Canvas.js';
 import Editor from './Editor.js';
+import CustomChart from './CustomChart.js';
 import {loadAreaResults, resetResults} from './ResultLoader.js'
 
 let imgCanvas = new Canvas('image-layer');
 let drawCanvas = new Canvas('draw-layer');
 let scaleCanvas = new Canvas('scale-layer');
 let editor = new Editor(imgCanvas, drawCanvas, scaleCanvas);
+let cc = new CustomChart('chart');
 
 document.getElementById('upload').addEventListener("click", () => {
     editor.loadImage();
@@ -28,7 +30,6 @@ document.getElementById('scale').addEventListener("click", () => {
 });
 
 document.getElementById('circle').addEventListener("click", () => {
-    console.log("activeTool is circle")
     editor.setActiveTool('circle');
 });
 
@@ -41,4 +42,20 @@ document.getElementById('bsSlider').addEventListener("input", (e) => {
     let span = document.getElementById('bssValue');
     editor.burshSize = value;
     span.style.left = value + "%";
+});
+
+document.getElementById('calc').addEventListener("click", () =>{
+    if(editor.img !== null){
+        const W = editor.img.width;
+        const H = editor.img.height;
+        const D = parseFloat(document.getElementById('D').value);
+        const N = parseFloat(document.getElementById('N').value);
+
+        editor.drawCanvas.resetCanvas();
+        cc.show();
+        editor.drawCanvas.subscribe(cc);
+        editor.setFixedSizedOSCanvasImage(editor.drawCanvas, W, H);
+        editor.drawCanvas.genNewRandom(D,N,W,H);
+    }
+    
 });

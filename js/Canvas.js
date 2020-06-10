@@ -5,10 +5,13 @@ export default class Canvas {
         this.ctx = this.canvas.getContext("2d");
         this.numOfAll = [];
         this.numOfIn = [];
+        this.width = 0;
+        this.height = 0;
         this.size = 0;
         this.pi = [];
         this.charts = [];
         this.closestValues = 0;
+        this.startingImgData = null;
     }
 
     drawCircleQuadrant() {
@@ -44,6 +47,10 @@ export default class Canvas {
         }
     }
 
+    calcAreaApprox(i,W,H){
+        return (this.numOfIn[i] / this.numOfAll[i]) * (W * H);
+    }
+
     calcPiApprox(i) {
         return 4 * (this.numOfIn[i] * Math.pow(this.size, 2) / this.numOfAll[i]) / Math.pow(this.size, 2);
     }
@@ -56,13 +63,23 @@ export default class Canvas {
         return `rgb(${red}, ${green}, ${blue})`;
     }
 
-    getClosestApprox(arr) {
+    getClosestPIApprox(arr) {
         return arr.reduce((prev, curr) => {
             return (Math.abs(curr.y - Math.PI) < Math.abs(prev.y - Math.PI) ? curr : prev)
         });
     }
 
-    genNewRandom(D, N, S) {
+    getClosestAreaApprox(arr,A) {
+        return arr.reduce((prev, curr) => {
+            return (Math.abs(curr.y - A) < Math.abs(prev.y - A) ? curr : prev)
+        });
+    }
+
+    // TODO - calculate real length of blue line
+
+    genNewRandom(D, N, W, H, A) {
+        this.width = W;
+        this.height = H;
         this.size = S;
         this.pi = [];
         this.numOfAll = Array.from({length: D},(v) => 0);
@@ -77,15 +94,15 @@ export default class Canvas {
 
                 this.numOfAll[j]++;
                 this.checkIfIsInside(j, rx, ry);
-                tmpPI.push(this.calcPiApprox(j));
+                tmpPI.push(A === 1 ? this.calcAreaApprox(j) : this.calcPiApprox(j));
                 this.ctx.fillRect(rx - 1, ry - 1, 2, 2);
             }
             let sum = tmpPI.reduce((x,y) => x+y,0);
             this.pi.push({x: i, y: sum / tmpPI.length});
         }
 
-        this.fire(this.pi, this.genRandomNonRedColor(), `S = ${S}, P = ${N}, N = ${D}`);
-        this.closestValues = this.getClosestApprox(this.pi).y;
+        this.fire(this.pi, this.genRandomNonRedColor(), `W = ${W}, H = ${H}, P = ${N}, N = ${D}`);
+        this.closestValues = A === 1 ? this.getClosestAreaApprox(this.pi).y : this.getClosestPIApprox(this.pi).y;
 
     }
 
