@@ -4,7 +4,8 @@ import {loadAreaResults, resetResults} from './ResultLoader.js'
 
 let imgCanvas = new Canvas('image-layer');
 let drawCanvas = new Canvas('draw-layer');
-let editor = new Editor(imgCanvas, drawCanvas);
+let scaleCanvas = new Canvas('scale-layer');
+let editor = new Editor(imgCanvas, drawCanvas, scaleCanvas);
 
 document.getElementById('upload').addEventListener("click", () => {
     editor.loadImage();
@@ -20,6 +21,10 @@ document.getElementById('select').addEventListener("click", () => {
 
 document.getElementById('square').addEventListener("click", () => {
     editor.setActiveTool('square');
+});
+
+document.getElementById('scale').addEventListener("click", () => {
+    editor.setActiveTool('scale');
 });
 
 document.getElementById('circle').addEventListener("click", () => {

@@ -19,7 +19,7 @@
 .buttons{
     display: grid;
     grid-template-columns: 45px 45px;
-    grid-template-rows: 45px 45px;
+    grid-template-rows: 45px 45px 45px;
     gap: 20px 20px;
 }
 
@@ -71,6 +71,10 @@ canvas{
 
 #draw-layer{
     z-index: 2;
+}
+
+#scale-layer{
+    z-index: 3;
 }
 
 button > span, button > img {

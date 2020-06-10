@@ -1,13 +1,15 @@
 export default class Editor {
 
-    constructor(imgCanvas, drawCanvas) {
+    constructor(imgCanvas, drawCanvas, scaleCanvas) {
         this.numOfDraws = parseFloat(document.getElementById('D').value);
         this.numOfPoints = parseFloat(document.getElementById('N').value);
         this.drawCanvas = drawCanvas;
         this.imgCanvas = imgCanvas;
+        this.scaleCanvas = scaleCanvas
         this.drawCanvas.ctx.lineJoin = 'round';
         this.img = null;
         this.drawnImg = null;
+        this.scaleImg = null;
         this.activeTool = null;
         this.autoFill = false;
         this.scale = 1;
@@ -33,51 +35,67 @@ export default class Editor {
             path: null,
             maxX: 0,
             maxY: 0,
-        }
+        };
+        this.scaleInfo = {
+            startX: 0,
+            startY: 0,
+            endX: 0,
+            endY: 0
+        };
         this.imgInfo = {
             width: 0,
             height: 0
-        }
+        };
         this.burshSize = 5;
+        this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
+        this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
+        this.scaleCanvas.ctx.strokeStyle = 'rgb(0,0,255)';
+        this.scaleCanvas.ctx.fillStyle = 'rgb(0,0,255)';
         document.getElementById('bsSlider').value = this.burshSize;
-        this.drawCanvas.canvas.addEventListener('mousedown', this.triggerEvent.bind(this));
-        this.drawCanvas.canvas.addEventListener('mousemove', this.triggerEvent.bind(this));
-        this.drawCanvas.canvas.addEventListener('mouseup', this.triggerEvent.bind(this));
-        this.drawCanvas.canvas.addEventListener('wheel', this.resize.bind(this));
+        this.scaleCanvas.canvas.addEventListener('mousedown', this.triggerEvent.bind(this));
+        this.scaleCanvas.canvas.addEventListener('mousemove', this.triggerEvent.bind(this));
+        this.scaleCanvas.canvas.addEventListener('mouseup', this.triggerEvent.bind(this));
+        this.scaleCanvas.canvas.addEventListener('wheel', this.resize.bind(this));
         document.addEventListener('keydown', this.handleShift.bind(this));
         document.addEventListener('keyup', this.handleShift.bind(this));
     }
 
     triggerEvent(event) {
-        if (event.type == "mousedown") {
-            if (this.activeTool == "move") {
+        if (event.type === "mousedown") {
+            if (this.activeTool === "move") {
                 this.dragStart(event);
-            } else if (this.activeTool == "select") {
+            } else if (this.activeTool === "select") {
                 this.drawStart(event);
-            } else if (this.activeTool == "square") {
+            } else if (this.activeTool === "square") {
                 this.drawSquareStart(event);
-            } else if (this.activeTool == "circle") {
+            } else if (this.activeTool === "circle") {
                 this.drawCircleStart(event);
+            } else if (this.activeTool === "scale") {
+                this.drawScaleStart(event);
             }
-        } else if (event.type == "mousemove") {
-            if (this.activeTool == "move") {
+        } else if (event.type === "mousemove") {
+            if (this.activeTool === "move") {
                 this.drag(event);
-            } else if (this.activeTool == "select") {
+            } else if (this.activeTool === "select") {
                 this.draw(event);
-            } else if (this.activeTool == "square") {
+            } else if (this.activeTool === "square") {
                 this.drawSquare(event);
-            } else if (this.activeTool == "circle") {
+            } else if (this.activeTool === "circle") {
                 this.drawCircle(event);
+            } else if (this.activeTool === "scale") {
+                this.drawScale(event);
             }
-        } else if (event.type == "mouseup") {
-            if (this.activeTool == "move") {
+        } else if (event.type === "mouseup") {
+            if (this.activeTool === "move") {
                 this.dragEnd(event);
-            } else if (this.activeTool == "select") {
+            } else if (this.activeTool === "select") {
                 this.drawEnd(event);
-            } else if (this.activeTool == "square") {
+            } else if (this.activeTool === "square") {
                 this.drawSquareEnd(event);
-            } else if (this.activeTool == "circle") {
+            } else if (this.activeTool === "circle") {
                 this.drawCircleEnd(event);
+            } else if (this.activeTool === "scale") {
+                this.drawScaleEnd();
             }
         }
     }
@@ -120,9 +138,11 @@ export default class Editor {
     redraw() {
         this.imgCanvas.ctx.clearRect(0, 0, this.imgCanvas.canvas.width, this.imgCanvas.canvas.height);
         this.drawCanvas.ctx.clearRect(0, 0, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+        this.scaleCanvas.ctx.clearRect(0,0,this.scaleCanvas.canvas.width,this.scaleCanvas.canvas.height);
         if (this.drawInfo.isDrawn) {
-            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
             this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
+            this.scaleCanvas.ctx.drawImage(this.scaleImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height)
         } else {
             this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
         }
@@ -131,11 +151,8 @@ export default class Editor {
     resize(e) {
         if (e.deltaY < 0) 
             this.scale += this.scaleStep;
-         else if (e.deltaY > 0) 
+         else if (e.deltaY > 0)
             this.scale -= this.scaleStep;
-        
-
-
         this.imgInfo.width = this.img.width * this.scale;
         this.imgInfo.height = this.img.height * this.scale;
         console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
@@ -167,17 +184,13 @@ export default class Editor {
     }
 
     calcMouseCoords(e) {
-        let mousePos = {
-            x: 0,
-            y: 0
+        return {
+            x: ((e.pageX - this.bounds.left - scrollX) / this.bounds.width) * this.imgCanvas.canvas.width,
+            y: ((e.pageY - this.bounds.top - scrollY) / this.bounds.height) * this.imgCanvas.canvas.height
         }
-        mousePos.x = ((e.pageX - this.bounds.left - scrollX) / this.bounds.width) * this.imgCanvas.canvas.width;
-        mousePos.y = ((e.pageY - this.bounds.top - scrollY) / this.bounds.height) * this.imgCanvas.canvas.height;
-        return mousePos;
     }
 
     drawStart(e) {
-        this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
         this.drawCanvas.ctx.lineWidth = this.burshSize;
         this.drawInfo.isDrawing = true;
         let mousePos = this.calcMouseCoords(e);
@@ -189,6 +202,7 @@ export default class Editor {
         }
 
     }
+
     draw(e) {
         if (this.img !== null && this.activeTool === 'select' && this.drawInfo.isDrawing) {
             let mousePos = this.calcMouseCoords(e);
@@ -206,6 +220,7 @@ export default class Editor {
             this.drawInfo.lastY = this.drawInfo.currY;
         }
     }
+
     drawEnd(e) {
         if (this.activeTool === 'select') {
             this.drawInfo.isDrawing = false;
@@ -223,7 +238,7 @@ export default class Editor {
 
     }
 
-    clearArea(shape,e,x,y) {
+    clearArea(canvas,shape,e,x,y) {
         let w = Math.abs(x - this.drawInfo.lastX);
         let h = Math.abs(y - this.drawInfo.lastY);
         let plus = Math.ceil(this.burshSize / 2);
@@ -240,27 +255,24 @@ export default class Editor {
         if(shape === "square"){
             if (x < this.drawInfo.maxX || y < this.drawInfo.maxY) {
                 if (this.drawInfo.shiftDown){
-                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), w + (plus * 2));
+                    canvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), w + (plus * 2));
                 }else{
-                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), h + (plus * 2));
+                    canvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), h + (plus * 2));
                 }
-                
             } else {
                 if (this.drawInfo.shiftDown){
-                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX, this.drawInfo.lastY, w, w);
+                    canvas.ctx.clearRect(this.drawInfo.lastX, this.drawInfo.lastY, w, w);
                 }else{
-                    this.drawCanvas.ctx.clearRect(this.drawInfo.lastX, this.drawInfo.lastY, w, h);
+                    canvas.ctx.clearRect(this.drawInfo.lastX, this.drawInfo.lastY, w, h);
                 }
             }
         }
         else if(shape === "circle"){
-            this.drawCanvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), h + (plus * 2));
+            canvas.ctx.clearRect(this.drawInfo.lastX - plus, this.drawInfo.lastY - plus, w + (plus * 2), h + (plus * 2));
         }
     }
 
     drawSquareStart(e) {
-        this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
-        this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
         this.drawCanvas.ctx.lineWidth = this.burshSize;
         let mousePos = this.calcMouseCoords(e);
         this.drawInfo.lastX = mousePos.x;
@@ -271,9 +283,9 @@ export default class Editor {
     drawSquare(e) {
         if (this.img !== null && this.activeTool === 'square' && this.drawInfo.isDrawing) {
             let mousePos = this.calcMouseCoords(e);
-            this.clearArea("square",e,mousePos.x,mousePos.y);
+            this.clearArea(this.drawCanvas,"square",e,mousePos.x,mousePos.y);
             this.drawCanvas.ctx.beginPath();
-            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
+            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
             let w = Math.abs(mousePos.x - this.drawInfo.lastX);
             let h = Math.abs(mousePos.y - this.drawInfo.lastY);
             if(this.drawInfo.shiftDown){
@@ -289,51 +301,74 @@ export default class Editor {
         }
     }
 
-        drawSquareEnd(e) {
-            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
-            bitmapPromise.then((value) => this.drawnImg = value) 
-                this.drawInfo.isDrawing = false;
-            
-        }
+    drawSquareEnd(e) {
+        let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+        bitmapPromise.then((value) => this.drawnImg = value)
+        this.drawInfo.isDrawing = false;
+    }
 
-        drawCircleStart(e) {
-            this.drawCanvas.ctx.strokeStyle = 'rgb(255,0,0)';
-            this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
-            this.drawCanvas.ctx.lineWidth = this.burshSize;
+    drawCircleStart(e) {
+
+        this.drawCanvas.ctx.lineWidth = this.burshSize;
+        let mousePos = this.calcMouseCoords(e);
+        this.drawInfo.lastX = mousePos.x;
+        this.drawInfo.lastY = mousePos.y;
+        this.drawInfo.isDrawing = true;
+    }
+
+    drawCircle(e) {
+        if (this.img !== null && this.activeTool === 'circle' && this.drawInfo.isDrawing) {
             let mousePos = this.calcMouseCoords(e);
-            this.drawInfo.lastX = mousePos.x;
-            this.drawInfo.lastY = mousePos.y;
-            this.drawInfo.isDrawing = true;
-        }
-
-        drawCircle(e) {
-            if (this.img !== null && this.activeTool === 'circle' && this.drawInfo.isDrawing) {
-                let mousePos = this.calcMouseCoords(e);
-                this.clearArea("circle",e,mousePos.x,mousePos.y);
-                this.drawCanvas.ctx.beginPath();
-                this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
-                let ox = this.drawInfo.lastX + Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2);
-                let oy = this.drawInfo.lastY + Math.floor((this.drawInfo.currY - this.drawInfo.lastY) / 2);
-                if(this.drawInfo.shiftDown){
-                    oy = this.drawInfo.lastY + Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2);
-                    this.drawCanvas.ctx.ellipse(ox, oy, Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), 0, 0, Math.PI * 2);
-                }
-                else{
-                    this.drawCanvas.ctx.ellipse(ox, oy, Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), Math.floor((this.drawInfo.currY - this.drawInfo.lastY) / 2), 0, 0, Math.PI * 2);
-                }
-                
-                if (this.autoFill) 
-                    this.drawCanvas.ctx.fill();
-                else 
-                    this.drawCanvas.ctx.stroke();
+            this.clearArea(this.drawCanvas,"circle",e,mousePos.x,mousePos.y);
+            this.drawCanvas.ctx.beginPath();
+            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
+            let ox = this.drawInfo.lastX + Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2);
+            let oy = this.drawInfo.lastY + Math.floor((this.drawInfo.currY - this.drawInfo.lastY) / 2);
+            if(this.drawInfo.shiftDown){
+                oy = this.drawInfo.lastY + Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2);
+                this.drawCanvas.ctx.ellipse(ox, oy, Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), 0, 0, Math.PI * 2);
             }
-        }
-
-        drawCircleEnd(e) {
-            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
-            bitmapPromise.then((value) => this.drawnImg = value) 
-                    this.drawInfo.isDrawing = false;
+            else{
+                this.drawCanvas.ctx.ellipse(ox, oy, Math.floor((this.drawInfo.currX - this.drawInfo.lastX) / 2), Math.floor((this.drawInfo.currY - this.drawInfo.lastY) / 2), 0, 0, Math.PI * 2);
             }
 
-
+            if (this.autoFill)
+                this.drawCanvas.ctx.fill();
+            else
+                this.drawCanvas.ctx.stroke();
         }
+    }
+
+    drawCircleEnd(e) {
+        let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+        bitmapPromise.then((value) => this.drawnImg = value)
+        this.drawInfo.isDrawing = false;
+    }
+
+    drawScaleStart(e){
+        this.scaleCanvas.ctx.clearRect(0,0,this.scaleCanvas.canvas.width,this.scaleCanvas.canvas.height);
+        this.scaleCanvas.ctx.lineWidth = this.burshSize;
+        let mousePos = this.calcMouseCoords(e);
+        this.drawInfo.lastX = mousePos.x;
+        this.drawInfo.lastY = mousePos.y;
+        this.drawInfo.isDrawing = true;
+        console.log("drawScaleStart() is called");
+    }
+
+    drawScale(e){
+        if (this.img !== null && this.activeTool === 'scale' && this.drawInfo.isDrawing){
+            let mousePos = this.calcMouseCoords(e);
+            this.scaleCanvas.ctx.clearRect(0,0,this.scaleCanvas.canvas.width,this.scaleCanvas.canvas.height);
+            this.scaleCanvas.ctx.beginPath();
+            this.scaleCanvas.ctx.moveTo(this.drawInfo.lastX,this.drawInfo.lastY);
+            this.scaleCanvas.ctx.lineTo(mousePos.x,mousePos.y);
+            this.scaleCanvas.ctx.stroke();
+        }
+    }
+
+    drawScaleEnd(){
+        let bitmapPromise = createImageBitmap(this.scaleCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height));
+        bitmapPromise.then((value) => this.scaleImg = value)
+        this.drawInfo.isDrawing = false;
+    }
+}
