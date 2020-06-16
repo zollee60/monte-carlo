@@ -40,7 +40,8 @@ export default class Editor {
             startX: 0,
             startY: 0,
             endX: 0,
-            endY: 0
+            endY: 0,
+            isDrawn: false
         };
         this.imgInfo = {
             width: 0,
@@ -114,14 +115,14 @@ export default class Editor {
                 this.scale = this.imgCanvas.canvas.width / img.width;
                 let w = img.width * this.scale;
                 let h = img.height * this.scale;
-                console.log((this.imgCanvas.canvas.height / 2) + (img.height / 2));
+                //console.log((this.imgCanvas.canvas.height / 2) + (img.height / 2));
                 let sy = (this.imgCanvas.canvas.height / 2) - (h / 2);
                 this.imgCanvas.ctx.drawImage(img, 0, sy, w, h);
                 this.img = img;
-                console.log(this.img);
+                //console.log(this.img);
                 this.imgInfo.width = w;
                 this.imgInfo.height = h;
-                console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
+                //console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
 
                 this.dragInfo.canvasY = sy;
             }
@@ -132,35 +133,34 @@ export default class Editor {
     }
 
     getLengthOfScale(){
-        return Math.sqrt(Math.pow(this.scaleInfo.endX - this.scaleInfo.startX) + Math.pow(this.scaleInfo.endY - this.scaleInfo.startY));
+        return Math.sqrt(Math.pow(this.scaleInfo.endX - this.scaleInfo.startX,2) + Math.pow(this.scaleInfo.endY - this.scaleInfo.startY,2));
+    }
+
+    calculateScale(dist){
+        //console.log(this.getLengthOfScale());
+        return this.getLengthOfScale() / dist;
     }
 
     setActiveTool(tool) {
         this.activeTool = tool;
     }
 
-    //FIXME - restructure drawImage() calls
+    
     redraw() {
         this.imgCanvas.ctx.clearRect(0, 0, this.imgCanvas.canvas.width, this.imgCanvas.canvas.height);
         this.drawCanvas.ctx.clearRect(0, 0, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height);
         this.scaleCanvas.ctx.clearRect(0,0,this.scaleCanvas.canvas.width,this.scaleCanvas.canvas.height);
         if (this.drawInfo.isDrawn) {
-            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
-            this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
+            this.drawCanvas.ctx.drawImage(this.drawnImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);  
+        } 
+        if (this.scaleInfo.isDrawn){
             this.scaleCanvas.ctx.drawImage(this.scaleImg, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height)
-        } else {
-            this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
         }
+        this.imgCanvas.ctx.drawImage(this.img, this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);
     }
 
-    setFixedSizedOSCanvasImage(sourceCanvas,w,h){
-        let oc = new OffscreenCanvas(this.img.width,this.img.height);
-        let octx = oc.getContext('2d');
-        let sourceImg = null;
-        let sourceBitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
-        sourceBitmapPromise.then((value) => sourceImg = value);
-        octx.drawImage(sourceImg, 0, 0, w, h);
-        sourceCanvas.startingImgData = octx.getImageData(0,0,oc.width,oc.height);
+    setFixedSizedOSCanvasImage(sourceCanvas){
+        sourceCanvas.startingImgData = sourceCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height);        
     }
 
     resize(e) {
@@ -170,7 +170,7 @@ export default class Editor {
             this.scale -= this.scaleStep;
         this.imgInfo.width = this.img.width * this.scale;
         this.imgInfo.height = this.img.height * this.scale;
-        console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
+        //console.log("width: " + this.imgInfo.width + " height: " + this.imgInfo.height);
 
         this.redraw();
     }
@@ -240,14 +240,14 @@ export default class Editor {
         if (this.activeTool === 'select') {
             this.drawInfo.isDrawing = false;
             this.drawInfo.isDrawn = true;
-            console.log(this.autoFill);
+            //console.log(this.autoFill);
             if (this.autoFill) {
                 this.drawInfo.path.closePath();
                 this.drawCanvas.ctx.fillStyle = 'rgb(255,0,0)';
                 this.drawCanvas.ctx.fill(this.drawInfo.path);
             }
-            console.log(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height))
-            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+            //console.log(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height))
+            let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height));
             bitmapPromise.then((value) => this.drawnImg = value);
         }
 
@@ -295,8 +295,6 @@ export default class Editor {
         this.drawInfo.isDrawing = true;
     }
 
-    //FIXME - fix image duplication
-
     drawSquare(e) {
         if (this.img !== null && this.activeTool === 'square' && this.drawInfo.isDrawing) {
             let mousePos = this.calcMouseCoords(e);
@@ -319,7 +317,7 @@ export default class Editor {
     }
 
     drawSquareEnd(e) {
-        let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+        let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height));
         bitmapPromise.then((value) => this.drawnImg = value)
         this.drawInfo.isDrawing = false;
     }
@@ -357,7 +355,7 @@ export default class Editor {
     }
 
     drawCircleEnd(e) {
-        let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.drawCanvas.canvas.width, this.drawCanvas.canvas.height));
+        let bitmapPromise = createImageBitmap(this.drawCanvas.ctx.getImageData(this.dragInfo.canvasX, this.dragInfo.canvasY, this.imgInfo.width, this.imgInfo.height));
         bitmapPromise.then((value) => this.drawnImg = value)
         this.drawInfo.isDrawing = false;
     }
@@ -369,7 +367,7 @@ export default class Editor {
         this.scaleInfo.startX = mousePos.x;
         this.scaleInfo.startY = mousePos.y;
         this.drawInfo.isDrawing = true;
-        console.log("drawScaleStart() is called");
+        //console.log("drawScaleStart() is called");
     }
 
     drawScale(e){
@@ -377,7 +375,7 @@ export default class Editor {
             let mousePos = this.calcMouseCoords(e);
             this.scaleCanvas.ctx.clearRect(0,0,this.scaleCanvas.canvas.width,this.scaleCanvas.canvas.height);
             this.scaleCanvas.ctx.beginPath();
-            this.scaleCanvas.ctx.moveTo(this.drawInfo.lastX,this.drawInfo.lastY);
+            this.scaleCanvas.ctx.moveTo(this.scaleInfo.startX,this.scaleInfo.startY);
             this.scaleCanvas.ctx.lineTo(mousePos.x,mousePos.y);
             this.scaleCanvas.ctx.stroke();
             this.scaleInfo.endX = mousePos.x;

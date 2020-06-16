@@ -19,7 +19,7 @@ document.getElementById('calc').addEventListener("click", () => {
     cc.init(N);
     cc.show();
     canvas.subscribe(cc);
-    canvas.genNewRandom(D,N,S,S,0);
+    canvas.genNewRandom(D,N,S,S,0,0);
     loadPIResults(canvas.closestValues,'results');
 });
 

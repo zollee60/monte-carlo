@@ -50,12 +50,15 @@ document.getElementById('calc').addEventListener("click", () =>{
         const H = editor.img.height;
         const D = parseFloat(document.getElementById('D').value);
         const N = parseFloat(document.getElementById('N').value);
+        const DI = parseFloat(document.getElementById('DI').value);
+        const s = editor.calculateScale(DI);
 
-        editor.drawCanvas.resetCanvas();
+        //editor.drawCanvas.resetCanvas();
         cc.show();
         editor.drawCanvas.subscribe(cc);
-        editor.setFixedSizedOSCanvasImage(editor.drawCanvas, W, H);
-        editor.drawCanvas.genNewRandom(D,N,W,H);
+        editor.setFixedSizedOSCanvasImage(editor.drawCanvas);
+        setTimeout(() => editor.drawCanvas.genNewRandom(D,N,W,H,1,s), 1000)
+        //editor.drawCanvas.genNewRandom(D,N,W,H,1,s);
     }
     
 });

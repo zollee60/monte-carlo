@@ -35,12 +35,12 @@ export default class CustomChart {
             }
         });
         this.chartCanv.style.display = 'none';
-        let pi = [];
-        this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
+        
     }
 
     init(N) {
         let pi = [];
+        this.addNewDataSet(pi, 'rgba(255,0,0,1)', 'PI');
         for (let i = 0; i < N; i++) {
             pi[i] = {x: i, y: Math.PI};
         }
@@ -57,6 +57,7 @@ export default class CustomChart {
         console.log(`addNewDataSet is called: ${
             dataArray[0]
         } + ${colorString} + ${label}`);
+        console.log(dataArray);
         this.chart.data.datasets.push({
             label: label,
             lineTension: 0.1,

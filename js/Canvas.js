@@ -34,6 +34,7 @@ export default class Canvas {
     }
 
     checkIfIsInside(i, x, y) {
+        
         const red = y * (this.canvas.width * 4) + x * 4;
         const indices = [
             red,
@@ -45,9 +46,11 @@ export default class Canvas {
         if (this.startingImgData.data[indices[0]] === 255 && this.startingImgData.data[indices[1]] === 0 && this.startingImgData.data[indices[2]] === 0) {
             this.numOfIn[i]++;
         }
+        //console.log(`checkIfIsInside() is called numOfIn: ${this.numOfIn[i]} numOfAll: ${this.numOfAll[i]}`);
     }
 
     calcAreaApprox(i,W,H){
+        //console.log((this.numOfIn[i] / this.numOfAll[i]) * (W * H));
         return (this.numOfIn[i] / this.numOfAll[i]) * (W * H);
     }
 
@@ -75,16 +78,18 @@ export default class Canvas {
         });
     }
 
-    // TODO - calculate real length of blue line
 
-    genNewRandom(D, N, W, H, A) {
+
+    genNewRandom(D, N, W, H, A, s) {
+        const ws = W/s;
+        const hs = H/s;
         this.width = W;
         this.height = H;
-        this.size = S;
+        //this.size = S;
         this.pi = [];
-        this.numOfAll = Array.from({length: D},(v) => 0);
-        this.numOfIn = Array.from({length: D},(v) => 0);
-        let colorstrings = Array.from({length: D}, (v) => this.genRandomNonRedColor());
+        this.numOfAll = Array.from({length: D},() => 0);
+        this.numOfIn = Array.from({length: D},() => 0);
+        let colorstrings = Array.from({length: D}, () => this.genRandomNonRedColor());
         for (let i = 0; i < N; i++) {
             let tmpPI = [];
             for (let j = 0; j < D; j++) {
@@ -94,10 +99,13 @@ export default class Canvas {
 
                 this.numOfAll[j]++;
                 this.checkIfIsInside(j, rx, ry);
-                tmpPI.push(A === 1 ? this.calcAreaApprox(j) : this.calcPiApprox(j));
+                let approx = A === 1 ? this.calcAreaApprox(j,W/s,H/s) : this.calcPiApprox(j);
+                tmpPI.push(approx);
+                //console.log(approx);
                 this.ctx.fillRect(rx - 1, ry - 1, 2, 2);
             }
             let sum = tmpPI.reduce((x,y) => x+y,0);
+            //console.log(sum);
             this.pi.push({x: i, y: sum / tmpPI.length});
         }
 
